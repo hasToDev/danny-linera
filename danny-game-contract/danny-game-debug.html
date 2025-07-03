@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danny Game Contract Debug Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: white;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.2em;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .card h2 {
+            color: #5a67d8;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+        
+        .contract-info {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-left: 4px solid #5a67d8;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #2d3748;
+        }
+        
+        .info-value {
+            font-family: 'Courier New', monospace;
+            background: #e2e8f0;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .controls {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .btn-primary {
+            background: #5a67d8;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #4c51bf;
+        }
+        
+        .btn-secondary {
+            background: #38b2ac;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #319795;
+        }
+        
+        .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #dd6b20;
+        }
+        
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c53030;
+        }
+        
+        .btn-full-test {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-size: 1.1em;
+            padding: 15px 25px;
+            grid-column: 1 / -1;
+        }
+        
+        .debug-log {
+            background: #1a202c;
+            color: #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        
+        .log-entry {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-left: 3px solid #4a5568;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+        }
+        
+        .timestamp {
+            color: #90cdf4;
+            font-size: 0.8em;
+        }
+        
+        .leaderboard-section {
+            grid-column: 1 / -1;
+        }
+        
+        .leaderboard-list {
+            display: grid;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .leaderboard-entry {
+            display: grid;
+            grid-template-columns: 50px 1fr 100px 150px;
+            align-items: center;
+            padding: 12px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-left: 4px solid #e2e8f0;
+        }
+        
+        .leaderboard-entry.current-player {
+            background: #e6fffa;
+            border-left-color: #38b2ac;
+        }
+        
+        .rank {
+            font-weight: bold;
+            color: #5a67d8;
+            font-size: 1.1em;
+        }
+        
+        .player-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .player-name {
+            font-weight: bold;
+            color: #2d3748;
+        }
+        
+        .chain-id {
+            font-size: 0.8em;
+            color: #718096;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .score {
+            font-weight: bold;
+            color: #38a169;
+            font-size: 1.1em;
+        }
+        
+        .timestamp {
+            font-size: 0.8em;
+            color: #718096;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #718096;
+            font-style: italic;
+            padding: 20px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-connected {
+            background: #38a169;
+            box-shadow: 0 0 6px rgba(56, 161, 105, 0.5);
+        }
+        
+        .status-disconnected {
+            background: #e53e3e;
+            box-shadow: 0 0 6px rgba(229, 62, 62, 0.5);
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #5a67d8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .leaderboard-entry {
+                grid-template-columns: 40px 1fr 80px;
+            }
+            
+            .timestamp {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Danny Game Contract Debug Tool</h1>
+            <p>Інструмент для тестування смарт контракту Danny Game на Linera</p>
+        </div>
+        
+        <div class="main-grid">
+            <!-- Contract Info -->
+            <div class="card">
+                <h2>📋 Contract Information</h2>
+                <div class="contract-info">
+                    <div class="info-item">
+                        <span class="info-label">App ID:</span>
+                        <span class="info-value" id="app-id">Loading...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Chain ID:</span>
+                        <span class="info-value" id="chain-id">Loading...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Leaderboard Chain:</span>
+                        <span class="info-value" id="leaderboard-chain">Loading...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Player Name:</span>
+                        <span class="info-value" id="test-player-name">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Game State -->
+            <div class="card">
+                <h2>🎯 Game State</h2>
+                <div class="contract-info">
+                    <div class="info-item">
+                        <span class="info-label">Current Value:</span>
+                        <span class="info-value" id="current-value">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Best Score:</span>
+                        <span class="info-value" id="best-score">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Player Name:</span>
+                        <span class="info-value" id="player-name">Loading...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">My Rank:</span>
+                        <span class="info-value" id="my-rank">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Is Leaderboard Chain:</span>
+                        <span class="info-value" id="is-leaderboard-chain">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Test Controls -->
+            <div class="card">
+                <h2>🧪 Test Operations</h2>
+                <div class="controls">
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="dannyGameDebug.testSetupGame()">
+                            Setup Game
+                        </button>
+                        <button class="btn btn-secondary" onclick="dannyGameDebug.testIncrement()">
+                            Test Increment
+                        </button>
+                        <button class="btn btn-warning" onclick="dannyGameDebug.testSetBestAndSubmit()">
+                            Submit Score
+                        </button>
+                        <button class="btn btn-primary" onclick="dannyGameDebug.testRequestLeaderboard()">
+                            Request Leaderboard
+                        </button>
+                    </div>
+                    <button class="btn btn-full-test" onclick="dannyGameDebug.runFullTestSuite()">
+                        🚀 Run Full Test Suite
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Query Controls -->
+            <div class="card">
+                <h2>🔍 Query Operations</h2>
+                <div class="controls">
+                    <div class="button-group">
+                        <button class="btn btn-secondary" onclick="dannyGameDebug.getCurrentValue()">
+                            Get Value
+                        </button>
+                        <button class="btn btn-secondary" onclick="dannyGameDebug.getBestScore()">
+                            Get Best Score
+                        </button>
+                        <button class="btn btn-secondary" onclick="dannyGameDebug.getPlayerName()">
+                            Get Player Name
+                        </button>
+                        <button class="btn btn-secondary" onclick="dannyGameDebug.getLeaderboard()">
+                            Get Leaderboard
+                        </button>
+                        <button class="btn btn-warning" onclick="dannyGameDebug.getAllGameData()">
+                            Get All Data
+                        </button>
+                        <button class="btn btn-danger" onclick="dannyGameDebug.clearLog()">
+                            Clear Log
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Leaderboard -->
+            <div class="card leaderboard-section">
+                <h2>🏆 Leaderboard</h2>
+                <div id="leaderboard-list" class="leaderboard-list">
+                    <div class="no-data">No data loaded yet. Click "Get Leaderboard" to load data.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Debug Log -->
+        <div class="card">
+            <h2>📝 Debug Log</h2>
+            <div id="debug-log" class="debug-log">
+                <div class="log-entry">
+                    <span class="timestamp">Ready</span> Debug tool loaded. Waiting for initialization...
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "@linera/client": "./public/js/@linera/client/linera_web.js"
+            }
+        }
+    </script>
+    <script type="module" src="./danny-game-debug.js"></script>
+</body>
+</html> 

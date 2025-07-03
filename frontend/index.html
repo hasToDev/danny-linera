@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danny VS CatGirls</title>
+    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- Linera Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+              "@linera/client": "./@linera/client/linera_web.js"
+            }
+          }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Danny VS CatGirls</h1>
+        
+        <!-- Linera Wallet Info -->
+        <div id="walletInfo" class="wallet-info">
+            <div id="walletStatus">🔄 Підключення до Linera...</div>
+            <div id="chainInfo" style="display: none;">
+                <span>Ланцюг: <span id="chainId">-</span></span>
+            </div>
+            <div id="leaderboardStatus" style="display: none; margin-top: 10px;">
+                <span>🏆 Лідерборд: <span id="leaderboardStatusText">Ініціалізація...</span></span>
+            </div>
+        </div>
+        
+        <!-- Notification element -->
+        <div id="notification" class="notification"></div>
+        
+        <!-- Main Menu -->
+        <div id="mainMenu" class="screen active">
+            <div class="menu">
+                <button class="menu-btn" onclick="startGame()">Play</button>
+                <button class="menu-btn" onclick="showUpgrades()">Upgrades</button>
+                <button class="menu-btn" onclick="showLeaderboard()">Leaderboard</button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="screen">
+            <div class="game-container">
+                <canvas id="gameCanvas"></canvas>
+                <div class="game-overlay">
+                    <div class="overlay-stats">
+                        <div class="overlay-stat coins">
+                            <span class="stat-icon">🪙</span>
+                            <span id="coins">0</span>
+                        </div>
+                        <div class="overlay-stat kills">
+                            <span class="stat-icon">⚔️</span>
+                            <span id="kills">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="back-btn" onclick="endGame()">Вийти з гри</button>
+        </div>
+
+        <!-- Upgrades Screen -->
+        <div id="upgradesScreen" class="screen">
+            <h2>Прокачка</h2>
+            <div class="upgrade-item">
+                <div>
+                    <h3>Меч Рівень 2</h3>
+                    <p>Урон: 2 | Вартість: 500 монет</p>
+                </div>
+                <button class="upgrade-btn" id="upgrade2Btn" onclick="buyUpgrade(2)">Купити</button>
+            </div>
+            <div class="upgrade-item">
+                <div>
+                    <h3>Меч Рівень 3</h3>
+                    <p>Урон: 4 | Вартість: 1500 монет</p>
+                </div>
+                <button class="upgrade-btn" id="upgrade3Btn" onclick="buyUpgrade(3)">Купити</button>
+            </div>
+            <div class="stat">Всього монет: <span id="totalCoins">0</span></div>
+            <div class="reset-section">
+                <button class="reset-btn" onclick="resetProgressOld()">🔄 Скинути прогрес</button>
+                <p class="reset-warning">Увага: Це видалить всі монети та апгрейди!</p>
+            </div>
+            <button class="back-btn" onclick="showMainMenu()">Назад</button>
+        </div>
+
+        <!-- Leaderboard Screen -->
+        <div id="leaderboardScreen" class="screen">
+            <h2>Глобальна таблиця лідерів</h2>
+            <div class="leaderboard-status">
+                <div id="lineraStatus">🔄 Перевірка статусу Linera...</div>
+            </div>
+            <div class="leaderboard-controls">
+                <button class="control-btn" onclick="updateLeaderboard()">🔄 Оновити</button>
+            </div>
+            <div id="leaderboardList">
+                <!-- Leaderboard items will be populated here -->
+            </div>
+            <button class="back-btn" onclick="showMainMenu()">Назад</button>
+        </div>
+    </div>
+
+    <script src="js/game.js?v=3"></script>
+    <script src="js/linera-integration.js?v=3" type="module"></script>
+</body>
+</html> 
