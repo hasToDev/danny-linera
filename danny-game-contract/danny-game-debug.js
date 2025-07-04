@@ -1,7 +1,7 @@
 import * as linera from "@linera/client";
 
 // Константи для вашого контракту
-const DANNY_GAME_APP_ID = "fbed39bc36686dc65ed8d81047138f91cc82c3521158d09ec55891123409d203";
+const DANNY_GAME_APP_ID = "874908d0f33738169e805d70bdd8b3bad43485333772b9d19c9c1838b078990f";
 const LEADERBOARD_CHAIN_ID = "dfc88cbb06b5a844be804c5b9220c26ce7a2963cc06d47492bdf28c073892ac6";
 
 // Глобальні змінні

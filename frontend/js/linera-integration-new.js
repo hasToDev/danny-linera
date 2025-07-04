@@ -1,8 +1,8 @@
 import * as linera from "@linera/client";
 
-// Configuration - these should be set from environment or user input
-const DANNY_GAME_APP_ID = import.meta.env.VITE_APP_ID || 'e476187f6dbd4c6cd18c53cabb73a6b1e13c4b0e9b4c5ac9c2d7f2ae6b4e8b23b3e7f6e4e7b6e4e8b23b3e7f6e4e7b6e4e8b23b3e7f6e4e7b6e4e8b23b3e7f6e4e7b';
-const LEADERBOARD_CHAIN_ID = import.meta.env.VITE_LEADERBOARD_CHAIN_ID;
+// Configuration
+const DANNY_GAME_APP_ID = '874908d0f33738169e805d70bdd8b3bad43485333772b9d19c9c1838b078990f';
+const LEADERBOARD_CHAIN_ID = 'dfc88cbb06b5a844be804c5b9220c26ce7a2963cc06d47492bdf28c073892ac6';
 
 // Global state
 let wallet = null;
@@ -21,32 +21,32 @@ let playerStats = {
 
 // Initialize Linera integration
 async function initializeLinera() {
-        try {
+    try {
         updateStatus('🔄 Завантаження Linera SDK...');
-            
+        
         // Initialize WebAssembly
-            await linera.default();
-            
+        await linera.default();
+        
         // Create wallet and client
         updateStatus('🔄 Створення кошелька...');
-            const faucet = await new linera.Faucet(
-            import.meta.env.VITE_APP_URL || 'https://faucet.testnet-babbage.linera.net'
-            );
-            
+        const faucet = await new linera.Faucet(
+            'https://faucet.testnet-babbage.linera.net'
+        );
+        
         wallet = await faucet.createWallet();
         client = await new linera.Client(wallet);
-            
+        
         // Get chain with tokens
         updateStatus('🔄 Отримання тестових токенів...');
         chainId = await faucet.claimChain(client);
-            
+        
         // Initialize game contract
         updateStatus('🔄 Ініціалізація контракту...');
         gameContract = await client.frontend().application(DANNY_GAME_APP_ID);
         
         // Set up player
         playerName = promptPlayerName();
-            
+        
         // Configure the game
         await setupGame();
         
@@ -57,16 +57,16 @@ async function initializeLinera() {
         updateStatus('✅ Готово до гри!');
         updateChainInfo();
         
-            console.log('Linera initialized successfully:', {
+        console.log('Linera initialized successfully:', {
             chainId,
             playerName,
             isGameConfigured
         });
-            
-        } catch (error) {
+        
+    } catch (error) {
         console.error('Failed to initialize Linera:', error);
         updateStatus('❌ Помилка підключення до Linera');
-            
+        
         // Continue with offline mode
         isInitialized = false;
     }
@@ -75,7 +75,7 @@ async function initializeLinera() {
 // Setup game with leaderboard configuration
 async function setupGame() {
     try {
-            // Set player name
+        // Set player name
         const setNameQuery = `mutation {
             setPlayerName(name: "${playerName}")
         }`;
@@ -96,88 +96,88 @@ async function setupGame() {
             }`;
             
             await gameContract.query(JSON.stringify({ query: setLeaderboardQuery }));
-    }
-
+        }
+        
         isGameConfigured = true;
         console.log('Game configured successfully');
         
-        } catch (error) {
+    } catch (error) {
         console.error('Failed to setup game:', error);
         isGameConfigured = false;
-        }
     }
+}
 
 // Update kills during gameplay
 async function updateKills(kills) {
     if (!isInitialized || !gameContract) {
-            return false;
-        }
-        
-        try {
+        return false;
+    }
+    
+    try {
         const incrementQuery = `mutation {
-            increment(value: 1)
-            }`;
-            
+            Increment(value: 1)
+        }`;
+        
         await gameContract.query(JSON.stringify({ query: incrementQuery }));
         playerStats.currentKills = kills;
-            return true;
+        return true;
         
-        } catch (error) {
-            console.error('Failed to update kills:', error);
-            return false;
-        }
+    } catch (error) {
+        console.error('Failed to update kills:', error);
+        return false;
     }
+}
 
 // Submit final score to leaderboard
 async function submitScore(finalKills) {
     if (!isInitialized || !gameContract) {
-            console.log('Contract not ready, cannot submit score');
-            return false;
-        }
-        
-        try {
+        console.log('Contract not ready, cannot submit score');
+        return false;
+    }
+    
+    try {
         // Submit the best score (this will automatically send to leaderboard)
         const setBestQuery = `mutation {
-            setBest(best: ${finalKills})
-            }`;
-            
+            SetBest(best: ${finalKills})
+        }`;
+        
         await gameContract.query(JSON.stringify({ query: setBestQuery }));
-            
+        
         console.log('Score submitted successfully:', finalKills);
-            
+        
         // Request leaderboard update
         await requestLeaderboardUpdate();
-            
-            return true;
         
-        } catch (error) {
+        return true;
+        
+    } catch (error) {
         console.error('Failed to submit score:', error);
-            return false;
-        }
+        return false;
     }
+}
 
 // Request leaderboard update
 async function requestLeaderboardUpdate() {
     if (!isInitialized || !gameContract) {
-            return;
-        }
+        return;
+    }
+    
+    try {
+        const requestQuery = `mutation {
+            RequestLeaderboard
+        }`;
         
-        try {
-            const requestQuery = `mutation {
-            requestLeaderboard
-            }`;
-            
         await gameContract.query(JSON.stringify({ query: requestQuery }));
-            
+        
         // Wait and fetch updated leaderboard
         setTimeout(async () => {
             await fetchLeaderboard();
-            }, 2000);
-            
-        } catch (error) {
-            console.error('Failed to request leaderboard update:', error);
-        }
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Failed to request leaderboard update:', error);
     }
+}
 
 // Fetch leaderboard data
 async function fetchLeaderboard() {
@@ -186,26 +186,26 @@ async function fetchLeaderboard() {
             leaderboard: [],
             playerStats: playerStats
         };
-        }
-        
-        try {
-            const leaderboardQuery = `query {
-                leaderboard {
-                    playerName
-                    score
-                    timestamp
-                    playerChainId
-                }
+    }
+    
+    try {
+        const leaderboardQuery = `query {
+            leaderboard {
                 playerName
-                best
+                score
+                timestamp
+                playerChainId
+            }
+            playerName
+            best
             value
             myRank
-                isLeaderboardChain
-            }`;
-            
+            isLeaderboardChain
+        }`;
+        
         const response = await gameContract.query(JSON.stringify({ query: leaderboardQuery }));
-            const data = JSON.parse(response).data;
-            
+        const data = JSON.parse(response).data;
+        
         // Update global state
         leaderboard = data.leaderboard || [];
         playerStats = {
@@ -225,16 +225,16 @@ async function fetchLeaderboard() {
             playerRank: playerStats.rank,
             playerBest: playerStats.best
         });
-            
-            return {
+        
+        return {
             leaderboard: leaderboard,
             playerStats: playerStats
-            };
-            
-        } catch (error) {
-            console.error('Failed to fetch leaderboard:', error);
-            return {
-                leaderboard: [],
+        };
+        
+    } catch (error) {
+        console.error('Failed to fetch leaderboard:', error);
+        return {
+            leaderboard: [],
             playerStats: playerStats
         };
     }
@@ -316,11 +316,11 @@ function promptPlayerName() {
         return name.trim().substring(0, 20);
     }
     return `Гравець${Math.floor(Math.random() * 1000)}`;
-        }
+}
 
 function updateStatus(message) {
     const statusElement = document.getElementById('walletStatus');
-        if (statusElement) {
+    if (statusElement) {
         statusElement.textContent = message;
     }
 }

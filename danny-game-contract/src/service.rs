@@ -2,21 +2,18 @@
 
 mod state;
 
-use std::sync::Arc;
-
-use async_graphql::{EmptySubscription, Object, Schema};
+use async_graphql::{Request, Response, EmptySubscription, Object, Schema};
 use linera_sdk::{
-    graphql::GraphQLMutationRoot, linera_base_types::WithServiceAbi, views::View, Service,
-    ServiceRuntime,
+    base::WithServiceAbi,
+    views::{View, ViewStorageContext},
+    GraphQLService, QueryContext, Service, ServiceRuntime,
 };
 
-use danny_game::{ApplicationParameters, LeaderboardEntry, Operation};
-
+use danny_game::{ApplicationParameters, LeaderboardEntry};
 use self::state::DannyGameState;
 
 pub struct DannyGameService {
     state: DannyGameState,
-    runtime: Arc<ServiceRuntime<Self>>,
 }
 
 linera_sdk::service!(DannyGameService);
@@ -32,70 +29,62 @@ impl Service for DannyGameService {
         let state = DannyGameState::load(runtime.root_view_storage_context())
             .await
             .expect("Failed to load state");
-        DannyGameService {
-            state,
-            runtime: Arc::new(runtime),
-        }
+        DannyGameService { state }
     }
 
-    async fn handle_query(&self, query: Self::Query) -> Self::QueryResponse {
-        let value = *self.state.value.get();
-        let best = *self.state.best.get();
-        let player_name = self.state.player_name.get().clone();
-        let is_leaderboard = *self.state.is_leaderboard_chain.get();
-        let leaderboard = self.state.top_leaderboard.get().clone();
-
-        Schema::build(
+    async fn handle_query(&self, query: Request) -> Response {
+        let schema = Schema::build(
             QueryRoot {
-                value,
-                best,
-                player_name,
-                is_leaderboard,
-                leaderboard,
+                state: &self.state,
             },
-            Operation::mutation_root(self.runtime.clone()),
+            EmptyMutation,
             EmptySubscription,
         )
-        .finish()
-        .execute(query)
-        .await
+        .finish();
+        schema.execute(query).await
     }
 }
 
-struct QueryRoot {
-    value: u64,
-    best: u64,
-    player_name: String,
-    is_leaderboard: bool,
-    leaderboard: Vec<LeaderboardEntry>,
+struct QueryRoot<'a> {
+    state: &'a DannyGameState,
 }
 
 #[Object]
-impl QueryRoot {
-    async fn value(&self) -> &u64 {
-        &self.value
+impl<'a> QueryRoot<'a> {
+    async fn value(&self) -> u64 {
+        *self.state.value.get()
     }
 
-    async fn best(&self) -> &u64 {
-        &self.best
+    async fn best(&self) -> u64 {
+        *self.state.best.get()
     }
 
-    async fn player_name(&self) -> &str {
-        &self.player_name
+    async fn player_name(&self) -> String {
+        self.state.player_name.get().clone()
+    }
+
+    async fn leaderboard(&self) -> Vec<LeaderboardEntry> {
+        self.state.top_leaderboard.get().clone()
     }
 
     async fn is_leaderboard_chain(&self) -> bool {
-        self.is_leaderboard
+        *self.state.is_leaderboard_chain.get()
     }
 
-    async fn leaderboard(&self) -> &Vec<LeaderboardEntry> {
-        &self.leaderboard
+    async fn leaderboard_chain_id(&self) -> Option<String> {
+        self.state.leaderboard_chain_id.get().map(|id| id.to_string())
     }
 
-    async fn my_rank(&self) -> Option<usize> {
-        self.leaderboard
-            .iter()
-            .position(|entry| entry.player_name == self.player_name)
-            .map(|pos| pos + 1)
+    async fn my_rank(&self) -> Option<u32> {
+        let player_name = self.state.player_name.get().clone();
+        let leaderboard = self.state.top_leaderboard.get().clone();
+        
+        leaderboard.iter().position(|entry| entry.player_name == player_name)
+            .map(|pos| (pos + 1) as u32)
     }
-} 
+}
+
+struct EmptyMutation;
+
+#[Object]
+impl EmptyMutation {} 

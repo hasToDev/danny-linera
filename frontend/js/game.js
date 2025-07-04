@@ -42,8 +42,8 @@ let camera = {
 let player = {
     x: 0, // World coordinates
     y: 0, // World coordinates
-    width: 30,
-    height: 30,
+    width: 32,
+    height: 46.6,
     maxHealth: 100,
     health: 100,
     speed: 1.33, // Reduced speed (4/3)
@@ -526,7 +526,7 @@ async function saveScore(kills) {
     const survivalTime = gameState.gameSeconds;
     
     // Спробуємо зберегти через Linera блокчейн
-    if (window.lineraIntegration && window.lineraIntegration.isInitialized) {
+    if (window.lineraIntegration && window.lineraIntegration.isInitialized()) {
         try {
             console.log('Saving score to Linera blockchain:', {
                 kills: kills,
@@ -534,7 +534,7 @@ async function saveScore(kills) {
             });
             
             // Відправляємо результат в блокчейн
-            const success = await window.lineraIntegration.submitFinalScore(kills, survivalTime);
+            const success = await window.lineraIntegration.submitScore(kills);
             
             if (success) {
                 showNotification(`🎉 Результат збережено в блокчейн! ${kills} вбивств за ${Math.floor(survivalTime/60)}:${(survivalTime%60).toString().padStart(2, '0')}`, 'coin');
@@ -562,16 +562,16 @@ async function saveScoreToServer(kills) {
     let chainId = 'unknown';
     
     // Спробуємо отримати дані з Linera інтеграції
-    if (window.lineraIntegration && window.lineraIntegration.isInitialized) {
+    if (window.lineraIntegration && window.lineraIntegration.isInitialized()) {
         try {
-            const walletInfo = window.lineraIntegration.getWalletInfo();
-            if (walletInfo && walletInfo.chainId) {
-                playerWallet = walletInfo.chainId;
+            const playerStats = window.lineraIntegration.getPlayerStats();
+            if (playerStats && playerStats.playerName) {
+                playerWallet = playerStats.playerName;
                 chainId = 'linera-testnet';
-                console.log('Using Linera chain:', walletInfo.chainId);
+                console.log('Using Linera player:', playerStats.playerName);
             }
         } catch (error) {
-            console.error('Error getting Linera wallet info:', error);
+            console.error('Error getting Linera player stats:', error);
         }
     }
     
@@ -620,9 +620,9 @@ async function saveScoreToServer(kills) {
 }
 
 async function updateLeaderboard() {
-    const list = document.getElementById('leaderboardList');
+    const list = document.getElementById('leaderboard-list');
     if (!list) {
-        console.error('Element leaderboardList not found!');
+        console.error('Element leaderboard-list not found!');
         return;
     }
     
@@ -634,7 +634,7 @@ async function updateLeaderboard() {
     let leaderboard = [];
     
     // Спочатку спробуємо завантажити з блокчейну
-    if (window.lineraIntegration && window.lineraIntegration.isInitialized) {
+    if (window.lineraIntegration && window.lineraIntegration.isInitialized()) {
         try {
             console.log('Fetching leaderboard from Linera blockchain...');
             const leaderboardData = await window.lineraIntegration.fetchLeaderboard();
@@ -672,7 +672,7 @@ async function updateLeaderboard() {
 }
 
 function renderLeaderboard(leaderboard, isBlockchain = false) {
-    const list = document.getElementById('leaderboardList');
+    const list = document.getElementById('leaderboard-list');
     if (!list) return;
     
     list.innerHTML = '';
@@ -717,11 +717,11 @@ function renderLeaderboard(leaderboard, isBlockchain = false) {
             chainName = 'Linera';
             
             // Також показуємо скорочений chainId
-            if (entry.playerWallet && entry.playerWallet.length > 20) {
-                const shortWallet = entry.playerWallet.substring(0, 8) + '...' + entry.playerWallet.substring(entry.playerWallet.length - 6);
-                playerDisplay += ` (${shortWallet})`;
-            } else if (entry.playerWallet) {
-                playerDisplay += ` (${entry.playerWallet})`;
+            if (entry.playerChainId && entry.playerChainId.length > 20) {
+                const shortChainId = entry.playerChainId.substring(0, 8) + '...' + entry.playerChainId.substring(entry.playerChainId.length - 6);
+                playerDisplay += ` (${shortChainId})`;
+            } else if (entry.playerChainId) {
+                playerDisplay += ` (${entry.playerChainId})`;
             }
         } else {
             // Для серверних даних як раніше
@@ -748,7 +748,7 @@ function renderLeaderboard(leaderboard, isBlockchain = false) {
                 <span class="player-chain">${chainIcon} ${chainName}</span>
             </div>
             <div class="leaderboard-stats">
-                <span class="stat-kills">⚔️ ${entry.kills}</span>
+                <span class="stat-kills">⚔️ ${isBlockchain ? entry.score : entry.kills}</span>
                 ${survivalTimeText}
             </div>
         `;
@@ -761,11 +761,10 @@ function updateLineraStatus() {
     const statusElement = document.getElementById('lineraStatus');
     if (!statusElement) return;
     
-    if (window.lineraIntegration && window.lineraIntegration.isInitialized) {
-        const walletInfo = window.lineraIntegration.getWalletInfo();
-        if (walletInfo && walletInfo.chainId) {
-            const shortChainId = walletInfo.chainId.substring(0, 8) + '...' + walletInfo.chainId.substring(walletInfo.chainId.length - 6);
-            statusElement.innerHTML = `⛓️ Підключено до Linera: ${shortChainId}`;
+    if (window.lineraIntegration && window.lineraIntegration.isInitialized()) {
+        const playerStats = window.lineraIntegration.getPlayerStats();
+        if (playerStats && playerStats.playerName) {
+            statusElement.innerHTML = `⛓️ Підключено до Linera: ${playerStats.playerName}`;
             statusElement.style.color = '#a0ffa0';
             statusElement.parentElement.style.borderColor = 'rgba(108, 255, 108, 0.8)';
         } else {
@@ -1308,11 +1307,17 @@ function render() {
         ctx.shadowBlur = 10;
         ctx.shadowColor = 'rgba(65,105,225,0.5)';
         
-        // Draw Danny image (3x bigger)
-        const playerSize = Math.max(player.width, player.height) * 2;
-        ctx.drawImage(dannyImage, 
-                     player.x - playerSize/2, player.y - playerSize/2, 
-                     playerSize, playerSize);
+        // Пропорційне масштабування
+        const desiredHeight = 105;
+        const aspect = dannyImage.width / dannyImage.height;
+        const desiredWidth = desiredHeight * aspect;
+        ctx.drawImage(
+          dannyImage,
+          player.x - desiredWidth / 2,
+          player.y - desiredHeight / 2,
+          desiredWidth,
+          desiredHeight
+        );
         
         ctx.shadowBlur = 0;
         ctx.restore();

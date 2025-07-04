@@ -93,17 +93,31 @@
             <div class="leaderboard-status">
                 <div id="lineraStatus">🔄 Перевірка статусу Linera...</div>
             </div>
+            <div class="player-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Гравець:</span>
+                    <span id="player-name">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Кращий результат:</span>
+                    <span id="player-best">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Рейтинг:</span>
+                    <span id="player-rank">-</span>
+                </div>
+            </div>
             <div class="leaderboard-controls">
                 <button class="control-btn" onclick="updateLeaderboard()">🔄 Оновити</button>
             </div>
-            <div id="leaderboardList">
+            <div id="leaderboard-list">
                 <!-- Leaderboard items will be populated here -->
             </div>
             <button class="back-btn" onclick="showMainMenu()">Назад</button>
         </div>
     </div>
 
-    <script src="js/game.js?v=3"></script>
-    <script src="js/linera-integration.js?v=3" type="module"></script>
+    <script src="js/game.js?v=4"></script>
+    <script src="js/linera-integration-new.js?v=1" type="module"></script>
 </body>
 </html> 
