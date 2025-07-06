@@ -2,18 +2,20 @@
 
 mod state;
 
-use async_graphql::{Request, Response, EmptySubscription, Object, Schema};
+use std::sync::Arc;
+use async_graphql::{EmptySubscription, Object, Schema};
 use linera_sdk::{
-    base::WithServiceAbi,
-    views::{View, ViewStorageContext},
-    GraphQLService, QueryContext, Service, ServiceRuntime,
+    graphql::GraphQLMutationRoot,
+    linera_base_types::WithServiceAbi,
+    views::View, Service, ServiceRuntime,
 };
 
-use danny_game::{ApplicationParameters, LeaderboardEntry};
+use danny_game::{ApplicationParameters, LeaderboardEntry, Operation};
 use self::state::DannyGameState;
 
 pub struct DannyGameService {
-    state: DannyGameState,
+    state: Arc<DannyGameState>,
+    runtime: Arc<ServiceRuntime<Self>>,
 }
 
 linera_sdk::service!(DannyGameService);
@@ -29,28 +31,35 @@ impl Service for DannyGameService {
         let state = DannyGameState::load(runtime.root_view_storage_context())
             .await
             .expect("Failed to load state");
-        DannyGameService { state }
+        DannyGameService {
+            state: Arc::new(state),
+            runtime: Arc::new(runtime),
+        }
     }
 
-    async fn handle_query(&self, query: Request) -> Response {
-        let schema = Schema::build(
+    async fn handle_query(&self, query: Self::Query) -> Self::QueryResponse {
+        Schema::build(
             QueryRoot {
-                state: &self.state,
+                state: self.state.clone(),
+                runtime: self.runtime.clone(),
             },
-            EmptyMutation,
+            Operation::mutation_root(self.runtime.clone()),
             EmptySubscription,
         )
-        .finish();
-        schema.execute(query).await
+            .finish()
+            .execute(query)
+            .await
     }
 }
 
-struct QueryRoot<'a> {
-    state: &'a DannyGameState,
+#[allow(dead_code)]
+struct QueryRoot {
+    state: Arc<DannyGameState>,
+    runtime: Arc<ServiceRuntime<DannyGameService>>,
 }
 
 #[Object]
-impl<'a> QueryRoot<'a> {
+impl QueryRoot {
     async fn value(&self) -> u64 {
         *self.state.value.get()
     }
@@ -78,13 +87,8 @@ impl<'a> QueryRoot<'a> {
     async fn my_rank(&self) -> Option<u32> {
         let player_name = self.state.player_name.get().clone();
         let leaderboard = self.state.top_leaderboard.get().clone();
-        
+
         leaderboard.iter().position(|entry| entry.player_name == player_name)
             .map(|pos| (pos + 1) as u32)
     }
 }
-
-struct EmptyMutation;
-
-#[Object]
-impl EmptyMutation {} 

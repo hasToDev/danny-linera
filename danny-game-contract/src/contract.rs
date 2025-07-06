@@ -36,7 +36,7 @@ impl Contract for DannyGameContract {
         DannyGameContract { state, runtime }
     }
 
-    async fn instantiate(&mut self, player_name: String) {
+    async fn instantiate(&mut self, player_name: Self::InstantiationArgument) {
         // Ініціалізація
         self.state.value.set(0);
         self.state.best.set(0);
@@ -103,6 +103,16 @@ impl Contract for DannyGameContract {
                             .send_to(*leaderboard_chain_id);
                     }
                 }
+            }
+
+            Operation::SetupGame {leaderboard_chain_id, player_name} => {
+                // TODO: Реалізуйте цю операцію
+                panic!("Відсутня реалізація Operation::SetupGame");
+            }
+
+            Operation::SetBestAndSubmit {best} => {
+                // TODO: Реалізуйте цю операцію
+                panic!("Відсутня реалізація Operation::SetBestAndSubmit");
             }
         }
     }
